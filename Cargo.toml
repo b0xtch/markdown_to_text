@@ -1,10 +1,10 @@
 [package]
-name = "markdown_to_text"
-version = "1.0.1"
-authors = ["Florent Bécart <florent.becart@gmail.com>", "botch <i@b0xtch.com>"]
-edition = "2018"
+name = "md_to_text"
+version = "0.0.0"
+authors = ["Arran France <arran@arranfrance.com>", "Florent Bécart <florent.becart@gmail.com>", "botch <i@b0xtch.com>"]
+edition = "2021"
 description = "Converts Markdown to plain text."
-repository = "https://github.com/fbecart/markdown_to_text"
+repository = "https://github.com/b0xtch/md_to_text"
 readme = "README.md"
 keywords = ["Markdown"]
 license = "MIT"
