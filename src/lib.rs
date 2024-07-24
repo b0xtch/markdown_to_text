@@ -1,6 +1,6 @@
 #![warn(clippy::all, clippy::pedantic)]
 
-use pulldown_cmark::{Event, Options, Parser, Tag};
+use pulldown_cmark::{Event, Options, Parser, Tag, TagEnd};
 
 #[must_use]
 pub fn convert(markdown: &str) -> String {
@@ -8,7 +8,7 @@ pub fn convert(markdown: &str) -> String {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
 
-    let parser = Parser::new_ext(&markdown, options);
+    let parser = Parser::new_ext(markdown, options);
     let mut tags_stack = Vec::new();
     let mut buffer = String::new();
 
@@ -26,7 +26,7 @@ pub fn convert(markdown: &str) -> String {
             }
             Event::Text(content) => {
                 if !tags_stack.iter().any(is_strikethrough) {
-                    buffer.push_str(&content)
+                    buffer.push_str(&content);
                 }
             }
             Event::Code(content) => buffer.push_str(&content),
@@ -37,9 +37,9 @@ pub fn convert(markdown: &str) -> String {
     buffer.trim().to_string()
 }
 
-fn start_tag(tag: &Tag, buffer: &mut String, tags_stack: &mut Vec<Tag>) {
+fn start_tag(tag: &Tag, buffer: &mut String, tags_stack: &mut [Tag]) {
     match tag {
-        Tag::Link(_, _, title) | Tag::Image(_, _, title) => buffer.push_str(&title),
+        Tag::Link { title, .. } | Tag::Image { title, .. } => buffer.push_str(title),
         Tag::Item => {
             buffer.push('\n');
             let mut lists_stack = tags_stack
@@ -51,7 +51,7 @@ fn start_tag(tag: &Tag, buffer: &mut String, tags_stack: &mut Vec<Tag>) {
                 .collect::<Vec<_>>();
             let prefix_tabs_count = lists_stack.len() - 1;
             for _ in 0..prefix_tabs_count {
-                buffer.push('\t')
+                buffer.push('\t');
             }
             if let Some(Some(nb)) = lists_stack.last_mut() {
                 buffer.push_str(&nb.to_string());
@@ -61,26 +61,23 @@ fn start_tag(tag: &Tag, buffer: &mut String, tags_stack: &mut Vec<Tag>) {
                 buffer.push_str("• ");
             }
         }
-        Tag::Paragraph | Tag::CodeBlock(_) | Tag::Heading(_) => buffer.push('\n'),
+        Tag::Paragraph | Tag::CodeBlock(_) | Tag::Heading { .. } => buffer.push('\n'),
         _ => (),
     }
 }
 
-fn end_tag(tag: &Tag, buffer: &mut String, tags_stack: &[Tag]) {
+fn end_tag(tag: &TagEnd, buffer: &mut String, tags_stack: &[Tag]) {
     match tag {
-        Tag::Paragraph | Tag::Heading(_) => buffer.push('\n'),
-        Tag::CodeBlock(_) => {
-            if buffer.chars().last() != Some('\n') {
+        TagEnd::Paragraph | TagEnd::Heading { .. } => buffer.push('\n'),
+        TagEnd::CodeBlock { .. } => {
+            if !buffer.ends_with('\n') {
                 buffer.push('\n');
             }
         }
-        Tag::List(_) => {
-            let is_sublist = tags_stack.iter().any(|tag| match tag {
-                Tag::List(_) => true,
-                _ => false,
-            });
+        TagEnd::List(_) => {
+            let is_sublist = tags_stack.iter().any(|tag| matches!(tag, Tag::List { .. }));
             if !is_sublist {
-                buffer.push('\n')
+                buffer.push('\n');
             }
         }
         _ => (),
@@ -88,10 +85,7 @@ fn end_tag(tag: &Tag, buffer: &mut String, tags_stack: &[Tag]) {
 }
 
 fn is_strikethrough(tag: &Tag) -> bool {
-    match tag {
-        Tag::Strikethrough => true,
-        _ => false,
-    }
+    matches!(tag, Tag::Strikethrough)
 }
 
 #[cfg(test)]
@@ -212,7 +206,7 @@ End paragraph.";
     fn basic_link() {
         let markdown = "I'm an [inline-style link](https://www.google.com).";
         let expected = "I'm an inline-style link.";
-        assert_eq!(convert(markdown), expected)
+        assert_eq!(convert(markdown), expected);
     }
 
     #[ignore]
@@ -220,7 +214,7 @@ End paragraph.";
     fn link_with_itself() {
         let markdown = "Go to [https://www.google.com].";
         let expected = "Go to https://www.google.com.";
-        assert_eq!(convert(markdown), expected)
+        assert_eq!(convert(markdown), expected);
     }
 
     #[test]

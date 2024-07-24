@@ -1,7 +1,7 @@
 [package]
 name = "markdown_to_text"
-version = "1.0.0"
-authors = ["Florent Bécart <florent.becart@gmail.com>"]
+version = "1.0.1"
+authors = ["Florent Bécart <florent.becart@gmail.com>", "botch <i@b0xtch.com>"]
 edition = "2018"
 description = "Converts Markdown to plain text."
 repository = "https://github.com/fbecart/markdown_to_text"
@@ -10,4 +10,4 @@ keywords = ["Markdown"]
 license = "MIT"
 
 [dependencies]
-pulldown-cmark = "0.7"
+pulldown-cmark = "0.11.0"
